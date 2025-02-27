@@ -7,8 +7,8 @@
  */
 
 // Inclusion de l'autoload
-require_once 'class/ui/autoload.php';
 require_once 'autoload.php';
+require_once 'class/ui/autoload.php';
 
 // Démarrage de la session
 session_start();
@@ -22,6 +22,8 @@ function initialiserPartie(): void {
 
     // Stockage de l'état du jeu dans la session
     $_SESSION['action'] = $action->toJson();
+    // Stocker également le plateau pour l'interface
+    $_SESSION['plateau'] = $plateau->toJson();
     $_SESSION['joueurActif'] = PieceSquadro::BLANC; // Le joueur blanc commence
 }
 
@@ -38,13 +40,14 @@ function traiterActions(): ?string {
     }
 
     // Si aucune partie n'est en cours, en initialiser une
-    if (!isset($_SESSION['action'])) {
+    if (!isset($_SESSION['action']) || !isset($_SESSION['plateau'])) {
         initialiserPartie();
         return null;
     }
 
     // Récupération de l'état du jeu
     $action = ActionSquadro::fromJson($_SESSION['action']);
+    $plateau = PlateauSquadro::fromJson($_SESSION['plateau']);
     $joueurActif = $_SESSION['joueurActif'];
 
     // Traitement de la confirmation de déplacement
@@ -74,6 +77,8 @@ function traiterActions(): ?string {
 
             // Mettre à jour l'état du jeu dans la session
             $_SESSION['action'] = $action->toJson();
+            // Mettre à jour le plateau car il a été modifié par le mouvement
+            $_SESSION['plateau'] = $plateau->toJson();
 
         } catch (Exception $e) {
             return "Erreur lors du déplacement : " . $e->getMessage();
@@ -90,10 +95,13 @@ $erreur = traiterActions();
 $action = isset($_SESSION['action'])
     ? ActionSquadro::fromJson($_SESSION['action'])
     : null;
+$plateau = isset($_SESSION['plateau'])
+    ? PlateauSquadro::fromJson($_SESSION['plateau'])
+    : null;
 $joueurActif = $_SESSION['joueurActif'] ?? PieceSquadro::BLANC;
 
-// Création du générateur d'interface
-$uiGenerator = new SquadroUIGenerator($action, $joueurActif);
+// Création du générateur d'interface avec le plateau
+$uiGenerator = new SquadroUIGenerator($action, $joueurActif, $plateau);
 
 // Affichage de la page appropriée
 if ($erreur !== null) {
