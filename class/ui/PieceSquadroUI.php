@@ -2,123 +2,119 @@
 /**
  * Classe PieceSquadroUI
  *
- * Cette classe est responsable de générer le code HTML pour les différentes pièces
- * et cases du jeu Squadro.
+ * Cette classe est responsable de générer les boutons HTML
+ * pour toutes les configurations du jeu Squadro.
  *
- * @author Claude
+ * @author [Votre Nom]
  */
 class PieceSquadroUI {
     /** @var int Le joueur actif (PieceSquadro::BLANC ou PieceSquadro::NOIR) */
     private int $joueurActif;
 
-    /** @var string Le nom du formulaire utilisé pour envoyer les coordonnées */
+    /** @var string Le nom du formulaire pour transmettre les coordonnées */
     private string $nomFormulaire;
 
     /**
-     * Constructeur de la classe PieceSquadroUI
+     * Constructeur de la classe
      *
-     * @param int $joueurActif Le joueur actif (PieceSquadro::BLANC ou PieceSquadro::NOIR)
-     * @param string $nomFormulaire Le nom du formulaire pour l'action
+     * @param int $joueurActif Le joueur actuel (BLANC ou NOIR)
+     * @param string $nomFormulaire Nom du formulaire HTML
      */
-    public function __construct(int $joueurActif, string $nomFormulaire = 'formulaireSquadro') {
+    public function __construct(int $joueurActif, string $nomFormulaire = 'formSquadro') {
         $this->joueurActif = $joueurActif;
         $this->nomFormulaire = $nomFormulaire;
     }
 
     /**
-     * Génère le code HTML pour une case vide
+     * Génère le bouton pour une case vide
      *
-     * @param int $x Coordonnée X
-     * @param int $y Coordonnée Y
-     * @return string Code HTML pour une case vide
+     * @return string Bouton HTML pour une case vide
      */
-    public function generateCaseVide(int $x, int $y): string {
+    public function generateCaseVide(): string {
         return '<button type="button" class="case-vide" disabled>·</button>';
     }
 
     /**
-     * Génère le code HTML pour une case neutre (coins du plateau)
+     * Génère le bouton pour une case neutre (coins du plateau)
      *
-     * @param int $x Coordonnée X
-     * @param int $y Coordonnée Y
-     * @return string Code HTML pour une case neutre
+     * @return string Bouton HTML pour une case neutre
      */
-    public function generateCaseNeutre(int $x, int $y): string {
+    public function generateCaseNeutre(): string {
         return '<button type="button" class="case-neutre" disabled>×</button>';
     }
 
     /**
-     * Génère le code HTML pour une pièce blanche
+     * Génère le bouton pour une pièce blanche
      *
-     * @param int $x Coordonnée X
-     * @param int $y Coordonnée Y
-     * @param int $direction Direction de la pièce (PieceSquadro::EST ou PieceSquadro::OUEST)
-     * @param bool $estJouable Indique si la pièce est jouable par le joueur actif
-     * @return string Code HTML pour une pièce blanche
+     * @param int $x Coordonnée X de la pièce
+     * @param int $y Coordonnée Y de la pièce
+     * @param int $direction Direction de la pièce
+     * @param bool $estJouable Indique si la pièce peut être jouée
+     * @return string Bouton HTML pour une pièce blanche
      */
-    public function generatePieceBlanche(int $x, int $y, int $direction, bool $estJouable = false): string {
-        // Déterminer si la pièce est jouable (si le joueur actif est BLANC et la pièce est jouable)
+    public function generatePieceBlanche(int $x, int $y, int $direction, bool $estJouable): string {
+        // La pièce est-elle jouable pour les blancs ?
         $jouable = ($this->joueurActif === PieceSquadro::BLANC && $estJouable);
 
-        // Définir la classe CSS en fonction de la direction et si elle est jouable
-        $directionClass = ($direction === PieceSquadro::EST) ? 'piece-blanche-est' : 'piece-blanche-ouest';
-        $activeClass = $jouable ? 'jouable' : '';
+        // Classes pour la direction
+        $directionClass = ($direction === PieceSquadro::EST) ? 'est' : 'ouest';
 
         if ($jouable) {
-            // Si la pièce est jouable, on crée un bouton qui soumet le formulaire avec les coordonnées
-            return '<button type="submit" name="piece" value="' . $x . ',' . $y . '" 
-                    form="' . $this->nomFormulaire . '" 
-                    class="piece-blanche ' . $directionClass . ' ' . $activeClass . '">
-                    ◯</button>';
+            // Bouton de soumission pour les pièces jouables
+            return '<button type="submit" 
+                            name="piece" 
+                            value="' . $x . ',' . $y . '" 
+                            form="' . $this->nomFormulaire . '" 
+                            class="piece piece-blanche piece-blanche-' . $directionClass . '">BE</button>';
         } else {
-            // Sinon, on crée un bouton désactivé
+            // Bouton désactivé
             return '<button type="button" 
-                    class="piece-blanche ' . $directionClass . '" 
-                    disabled>◯</button>';
+                            class="piece piece-blanche piece-blanche-' . $directionClass . '" 
+                            disabled>BE</button>';
         }
     }
 
     /**
-     * Génère le code HTML pour une pièce noire
+     * Génère le bouton pour une pièce noire
      *
-     * @param int $x Coordonnée X
-     * @param int $y Coordonnée Y
-     * @param int $direction Direction de la pièce (PieceSquadro::NORD ou PieceSquadro::SUD)
-     * @param bool $estJouable Indique si la pièce est jouable par le joueur actif
-     * @return string Code HTML pour une pièce noire
+     * @param int $x Coordonnée X de la pièce
+     * @param int $y Coordonnée Y de la pièce
+     * @param int $direction Direction de la pièce
+     * @param bool $estJouable Indique si la pièce peut être jouée
+     * @return string Bouton HTML pour une pièce noire
      */
-    public function generatePieceNoire(int $x, int $y, int $direction, bool $estJouable = false): string {
-        // Déterminer si la pièce est jouable (si le joueur actif est NOIR et la pièce est jouable)
+    public function generatePieceNoire(int $x, int $y, int $direction, bool $estJouable): string {
+        // La pièce est-elle jouable pour les noirs ?
         $jouable = ($this->joueurActif === PieceSquadro::NOIR && $estJouable);
 
-        // Définir la classe CSS en fonction de la direction et si elle est jouable
-        $directionClass = ($direction === PieceSquadro::NORD) ? 'piece-noire-nord' : 'piece-noire-sud';
-        $activeClass = $jouable ? 'jouable' : '';
+        // Classes pour la direction
+        $directionClass = ($direction === PieceSquadro::NORD) ? 'nord' : 'sud';
 
         if ($jouable) {
-            // Si la pièce est jouable, on crée un bouton qui soumet le formulaire avec les coordonnées
-            return '<button type="submit" name="piece" value="' . $x . ',' . $y . '" 
-                    form="' . $this->nomFormulaire . '" 
-                    class="piece-noire ' . $directionClass . ' ' . $activeClass . '">
-                    ●</button>';
+            // Bouton de soumission pour les pièces jouables
+            return '<button type="submit" 
+                            name="piece" 
+                            value="' . $x . ',' . $y . '" 
+                            form="' . $this->nomFormulaire . '" 
+                            class="piece piece-noire piece-noire-' . $directionClass . '">NN</button>';
         } else {
-            // Sinon, on crée un bouton désactivé
+            // Bouton désactivé
             return '<button type="button" 
-                    class="piece-noire ' . $directionClass . '" 
-                    disabled>●</button>';
+                            class="piece piece-noire piece-noire-' . $directionClass . '" 
+                            disabled>NN</button>';
         }
     }
 
     /**
-     * Génère le code HTML pour une pièce basée sur son type, sa couleur et sa direction
+     * Génère le bouton pour une pièce en fonction de sa couleur
      *
-     * @param int $x Coordonnée X
-     * @param int $y Coordonnée Y
-     * @param PieceSquadro $piece Instance de la pièce
-     * @param bool $estJouable Indique si la pièce est jouable
-     * @return string Code HTML pour la pièce
+     * @param int $x Coordonnée X de la pièce
+     * @param int $y Coordonnée Y de la pièce
+     * @param PieceSquadro $piece La pièce à représenter
+     * @param bool $estJouable Indique si la pièce peut être jouée
+     * @return string Bouton HTML de la pièce
      */
-    public function generatePiece(int $x, int $y, PieceSquadro $piece, bool $estJouable = false): string {
+    public function generatePiece(int $x, int $y, PieceSquadro $piece, bool $estJouable): string {
         $couleur = $piece->getCouleur();
         $direction = $piece->getDirection();
 
@@ -128,18 +124,18 @@ class PieceSquadroUI {
             case PieceSquadro::NOIR:
                 return $this->generatePieceNoire($x, $y, $direction, $estJouable);
             case PieceSquadro::VIDE:
-                return $this->generateCaseVide($x, $y);
+                return $this->generateCaseVide();
             case PieceSquadro::NEUTRE:
-                return $this->generateCaseNeutre($x, $y);
+                return $this->generateCaseNeutre();
             default:
                 return '<button type="button" disabled>?</button>';
         }
     }
 
     /**
-     * Crée un formulaire HTML pour l'interaction avec le jeu
+     * Crée un formulaire HTML pour l'interaction
      *
-     * @param string $action URL de l'action du formulaire
+     * @param string $action URL de destination du formulaire
      * @param string $method Méthode HTTP (GET ou POST)
      * @return string Code HTML du formulaire
      */
@@ -148,143 +144,64 @@ class PieceSquadroUI {
     }
 
     /**
-     * Génère le CSS nécessaire pour l'affichage des pièces et du plateau
+     * Génère le CSS pour les boutons et pièces
      *
-     * @return string Code CSS pour les pièces et le plateau
+     * @return string Code CSS
      */
     public function generateCSS(): string {
         return '
         <style>
-            /* Styles du plateau */
-            .plateau-squadro {
-                display: grid;
-                grid-template-columns: repeat(7, 50px);
-                grid-template-rows: repeat(7, 50px);
-                gap: 2px;
-                margin: 20px auto;
-                max-width: 400px;
-            }
-            
-            /* Styles des boutons */
-            .plateau-squadro button {
+            .piece {
                 width: 50px;
                 height: 50px;
-                font-size: 24px;
                 border-radius: 5px;
-                border: 1px solid #ccc;
-                background-color: #f8f8f8;
+                font-weight: bold;
+                display: flex;
+                justify-content: center;
+                align-items: center;
                 cursor: default;
             }
-            
-            /* Cases vides */
-            .case-vide {
-                background-color: #f0f0f0 !important;
-            }
-            
-            /* Cases neutres (coins) */
-            .case-neutre {
-                background-color: #d0d0d0 !important;
-            }
-            
-            /* Pièces blanches */
+
             .piece-blanche {
-                background-color: #ffffff !important;
-                color: #000000;
-                border: 2px solid #000000 !important;
+                background-color: white;
+                color: black;
+                border: 2px solid black;
             }
-            
-            /* Pièces noires */
+
             .piece-noire {
-                background-color: #000000 !important;
-                color: #ffffff;
-                border: 2px solid #ffffff !important;
+                background-color: black;
+                color: white;
+                border: 2px solid white;
             }
-            
-            /* Directions des pièces */
-            .piece-blanche-est::after, .piece-blanche-ouest::after,
-            .piece-noire-nord::after, .piece-noire-sud::after {
-                font-size: 14px;
-                position: relative;
-                top: -5px;
+
+            .piece-blanche.est::after, 
+            .piece-blanche.ouest::after,
+            .piece-noire.nord::after, 
+            .piece-noire.sud::after {
+                content: "";
+                position: absolute;
+                font-size: 12px;
             }
-            
-            .piece-blanche-est::after {
-                content: "→";
+
+            .piece-blanche.est::after { content: "→"; }
+            .piece-blanche.ouest::after { content: "←"; }
+            .piece-noire.nord::after { content: "↑"; }
+            .piece-noire.sud::after { content: "↓"; }
+
+            .piece:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
             }
-            
-            .piece-blanche-ouest::after {
-                content: "←";
-            }
-            
-            .piece-noire-nord::after {
-                content: "↑";
-            }
-            
-            .piece-noire-sud::after {
-                content: "↓";
-            }
-            
-            /* Pièces jouables */
-            .jouable {
-                cursor: pointer !important;
-                box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-            }
-            
-            .piece-blanche.jouable:hover {
-                background-color: #e0e0e0 !important;
-            }
-            
-            .piece-noire.jouable:hover {
-                background-color: #333333 !important;
-            }
-            
-            /* Informations de jeu */
-            .info-jeu {
-                text-align: center;
-                margin: 20px auto;
-                max-width: 400px;
-                padding: 10px;
+
+            .case-vide, .case-neutre {
                 background-color: #f0f0f0;
-                border-radius: 5px;
-            }
-            
-            /* Message de victoire */
-            .message-victoire {
-                text-align: center;
-                font-size: 24px;
-                color: green;
-                margin: 20px auto;
-                padding: 20px;
-                background-color: #f0f8f0;
-                border: 2px solid green;
-                border-radius: 10px;
-                max-width: 400px;
-            }
-            
-            .boutons-action {
-            text-align: center;
-                margin: 20px auto;
-                max-width: 400px;
+                border: 1px solid #ccc;
+                color: #999;
             }
 
-            .bouton-action {
-            padding: 10px 20px;
-                margin: 0 10px;
-                font-size: 16px;
-                border-radius: 5px;
+            .piece.jouable {
                 cursor: pointer;
-            }
-
-            .bouton-confirmer {
-            background-color: #4CAF50;
-                color: white;
-                border: none;
-            }
-
-            .bouton-annuler {
-            background-color: #f44336;
-                color: white;
-                border: none;
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
             }
         </style>';
     }
