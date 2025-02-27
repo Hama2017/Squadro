@@ -43,13 +43,13 @@ class PlateauSquadro {
 
     private function initCasesBlanches(): void {
         for ($i = 1; $i <= 5; $i++) {
-            $this->plateau[$i][0] = PieceSquadro::initBlancOuest();
+            $this->plateau[$i][0] = PieceSquadro::initBlancEst();
         }
     }
 
     private function initCasesNoires(): void {
         for ($j = 1; $j <= 5; $j++) {
-            $this->plateau[6][$j] = PieceSquadro::initNoirSud();
+            $this->plateau[6][$j] = PieceSquadro::initNoirNord();
         }
     }
 

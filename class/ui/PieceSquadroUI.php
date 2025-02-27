@@ -115,6 +115,13 @@ class PieceSquadroUI {
      * @return string Bouton HTML de la pièce
      */
     public function generatePiece(int $x, int $y, PieceSquadro $piece, bool $estJouable): string {
+
+        // Débogage
+        echo "<!-- Pièce à ($x,$y) : couleur=" . $piece->getCouleur() .
+            ", joueurActif=" . $this->joueurActif .
+            ", estJouable=" . ($estJouable ? "true" : "false") . " -->";
+
+
         $couleur = $piece->getCouleur();
         $direction = $piece->getDirection();
 

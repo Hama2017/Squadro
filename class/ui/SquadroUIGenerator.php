@@ -21,23 +21,29 @@ class SquadroUIGenerator
     /** @var PieceSquadroUI Générateur des composants UI */
     private PieceSquadroUI $pieceUI;
 
+    /** @var string URL de traitement des actions */
+    private string $actionUrl;
+
     /**
      * Constructeur
      *
      * @param ActionSquadro $action Instance de gestion des actions
      * @param int $joueurActif Joueur actuel (BLANC ou NOIR)
      * @param PlateauSquadro|null $plateau Plateau de jeu
+     * @param string $actionUrl URL de traitement des actions
      */
     public function __construct(
         ActionSquadro   $action,
         int             $joueurActif = PieceSquadro::BLANC,
-        ?PlateauSquadro $plateau = null
+        ?PlateauSquadro $plateau = null,
+        string          $actionUrl = 'traiteActionSquadro.php'
     )
     {
         $this->action = $action;
         $this->plateau = $plateau ?? new PlateauSquadro();
         $this->joueurActif = $joueurActif;
         $this->pieceUI = new PieceSquadroUI($joueurActif);
+        $this->actionUrl = $actionUrl;
     }
 
     /**
@@ -160,7 +166,7 @@ class SquadroUIGenerator
         </head>
         <body>
             <h1>Squadro</h1>
-            ' . $this->pieceUI->createForm($_SERVER['PHP_SELF']) . '
+            ' . $this->pieceUI->createForm($this->actionUrl) . '
             ';
     }
 
@@ -264,8 +270,10 @@ class SquadroUIGenerator
                 $piece = $this->plateau->getPiece($x, $y);
 
                 // Déterminer si la pièce est jouable
+                // Modification pour corriger le problème: au lieu de vérifier avec estJouablePiece,
+                // on vérifie simplement que la pièce appartient au joueur actif
                 $estJouable = $piecesJouables &&
-                    $this->action->estJouablePiece($x, $y);
+                    $piece->getCouleur() === $this->joueurActif;
 
                 // Générer le HTML pour la pièce
                 $html .= $this->pieceUI->generatePiece($x, $y, $piece, $estJouable);
@@ -319,24 +327,33 @@ class SquadroUIGenerator
 
         $html .= '<h2>' . $joueurNom . '</h2>';
 
-        $coordsDestination = $this->plateau->getCoordDestination($x, $y);
+        // Calcul de la destination avec une gestion des erreurs
+        try {
+            $coordsDestination = $this->plateau->getCoordDestination($x, $y);
+            $messageDestination = "Cette pièce se déplacera vers la position (" . $coordsDestination[0] . ", " . $coordsDestination[1] . ")";
+        } catch (Exception $e) {
+            $messageDestination = "Cette pièce ne peut pas être déplacée (destination hors plateau)";
+        }
 
         $html .= '<div class="message message-info">
                     <p>Vous avez sélectionné la pièce en position (' . $x . ', ' . $y . ')</p>
-                    <p>Cette pièce se déplacera vers la position (' . $coordsDestination[0] . ', ' . $coordsDestination[1] . ')</p>
+                    <p>' . $messageDestination . '</p>
                     <p>Confirmez-vous ce déplacement ?</p>
                   </div>';
 
         $html .= $this->generateTableau(false, [$x, $y]);
 
         $html .= '<div class="actions">
-                    <form action="' . $_SERVER['PHP_SELF'] . '" method="post">
+                    <form action="' . $this->actionUrl . '" method="post">
                         <input type="hidden" name="confirmer" value="1">
                         <input type="hidden" name="x" value="' . $x . '">
                         <input type="hidden" name="y" value="' . $y . '">
                         <button type="submit" class="bouton-action bouton-confirmer">Confirmer</button>
                     </form>
-                    <a href="' . $_SERVER['PHP_SELF'] . '" class="bouton-action bouton-annuler">Annuler</a>
+                    <form action="' . $this->actionUrl . '" method="post">
+                        <input type="hidden" name="annuler" value="1">
+                        <button type="submit" class="bouton-action bouton-annuler">Annuler</button>
+                    </form>
                   </div>';
 
         $html .= $this->generateFooter();
@@ -362,7 +379,7 @@ class SquadroUIGenerator
         $html .= $this->generateTableau(false);
 
         $html .= '<div class="actions">
-                    <form action="' . $_SERVER['PHP_SELF'] . '" method="post">
+                    <form action="' . $this->actionUrl . '" method="post">
                         <input type="hidden" name="nouvelle_partie" value="1">
                         <button type="submit" class="bouton-action bouton-confirmer">Nouvelle partie</button>
                     </form>
@@ -387,7 +404,10 @@ class SquadroUIGenerator
                   </div>';
 
         $html .= '<div class="actions">
-                    <a href="' . $_SERVER['PHP_SELF'] . '" class="bouton-action bouton-confirmer">Retour au jeu</a>
+                    <form action="' . $this->actionUrl . '" method="post">
+                        <input type="hidden" name="nouvelle_partie" value="1">
+                        <button type="submit" class="bouton-action bouton-confirmer">Nouvelle partie</button>
+                    </form>
                   </div>';
 
         $html .= $this->generateFooter();
