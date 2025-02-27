@@ -4,6 +4,7 @@
 // ajoute une methode __toString()
 
 require_once 'PlateauSquadro.php';
+
 class ActionSquadro {
     private PlateauSquadro $plateau;
 
