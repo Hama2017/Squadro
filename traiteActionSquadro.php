@@ -49,11 +49,16 @@ function sauvegarderEtatPartie(): void {
         // Initialiser la connexion à la base de données
         PDOSquadro::initPDO($_ENV['sgbd'], $_ENV['host'], $_ENV['database'], $_ENV['user'], $_ENV['password']);
 
+        // Mettre à jour le joueur actif dans le JSON de la partie
+        $partie = PDOSquadro::getPartieSquadroById($partieId);
+        $partieData = json_decode($partie->toJson(), true);
+        $partieData['joueurActif'] = $_SESSION['joueurActif'] === PieceSquadro::BLANC ?
+            PartieSquadro::PLAYER_ONE : PartieSquadro::PLAYER_TWO;
+
         // Sauvegarder l'état
-        PDOSquadro::savePartieSquadro($gameStatus, $actionJson, $partieId);
+        PDOSquadro::savePartieSquadro($gameStatus, json_encode($partieData), $partieId);
     }
 }
-
 /**
  * Traitement de l'action ChoisirPiece
  *
@@ -115,7 +120,7 @@ function traiterConfirmerChoix(): ?string {
 
 
     try {
-        // Effectuer le déplacement avec la méthode jouePiece
+// Effectuer le déplacement avec la méthode jouePiece
         $action->jouePiece($x, $y);
 
         // Oublier les anciennes coordonnées
@@ -132,8 +137,10 @@ function traiterConfirmerChoix(): ?string {
             $_SESSION['joueurActif'] = ($joueurActif === PieceSquadro::BLANC)
                 ? PieceSquadro::NOIR
                 : PieceSquadro::BLANC;
+
             // Retourner à l'état de choix
             $_SESSION['etat'] = 'ChoixPiece';
+            $_SESSION['isPlayerTurn'] = false;
         }
 
         // Mettre à jour l'état du jeu dans la session
@@ -142,7 +149,6 @@ function traiterConfirmerChoix(): ?string {
 
         // Sauvegarder l'état dans la base de données
         sauvegarderEtatPartie();
-
     } catch (Exception $e) {
         return "Erreur lors du déplacement : " . $e->getMessage();
     }

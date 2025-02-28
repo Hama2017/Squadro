@@ -36,16 +36,16 @@ if (isset($_GET['partieId']) && is_numeric($_GET['partieId'])) {
             $plateau = PlateauSquadro::fromJson($partie->getJson());
             $action = new ActionSquadro($plateau);
 
-            // Déterminer quel joueur est connecté et quelle couleur il contrôle
+            // Déterminer quelle couleur de pièce est associée au joueur connecté
             $currentPlayer = $_SESSION['player'];
             $playerColor = null;
 
             if ($partie->getJoueurs()[0]->getId() === $currentPlayer->getId()) {
-                // Le joueur connecté est le joueur 1 (blancs)
+                // Le joueur connecté est le joueur 1 (blancs ou premiers à rejoindre)
                 $playerColor = PieceSquadro::BLANC;
             } elseif (isset($partie->getJoueurs()[1]) &&
                 $partie->getJoueurs()[1]->getId() === $currentPlayer->getId()) {
-                // Le joueur connecté est le joueur 2 (noirs)
+                // Le joueur connecté est le joueur 2 (noirs ou deuxième à rejoindre)
                 $playerColor = PieceSquadro::NOIR;
             } else {
                 // Le joueur connecté n'est pas un participant de cette partie
@@ -54,12 +54,11 @@ if (isset($_GET['partieId']) && is_numeric($_GET['partieId'])) {
                 exit;
             }
 
-            // Déterminer le joueur actif en fonction de l'état de la partie
-            $joueurActif = $partie->getJoueurActif() !== null ?
-                ($partie->getJoueurActif() === PartieSquadro::PLAYER_ONE ? PieceSquadro::BLANC : PieceSquadro::NOIR) :
-                PieceSquadro::BLANC;
+// Déterminer le joueur actif en fonction de l'état de la partie
+            $joueurActif = $partie->getJoueurActif() === PartieSquadro::PLAYER_ONE ?
+                PieceSquadro::BLANC : PieceSquadro::NOIR;
 
-            // Vérifier si c'est le tour du joueur connecté
+// Vérifier si c'est le tour du joueur connecté
             $isPlayerTurn = ($playerColor === $joueurActif);
 
             // Stocker ces informations en session

@@ -69,20 +69,26 @@ if (isset($_POST['action'])) {
             exit;
 
         case 'joinGame':
-            // Rejoindre une partie existante
             if (isset($_POST['gameId']) && is_numeric($_POST['gameId'])) {
                 $gameId = (int)$_POST['gameId'];
                 $partie = PDOSquadro::getPartieSquadroById($gameId);
 
                 if ($partie) {
-                    // Ajouter le joueur à la partie
-                    $json = $partie->getJson();
+                    // Vérifier que la partie n'a pas déjà deux joueurs
+                    if (count($partie->getJoueurs()) < 2) {
+                        // Ajouter le joueur à la partie
+                        $json = $partie->getJson();
 
-                    PDOSquadro::addPlayerToPartieSquadro($player->getJoueurNom(), $json, $gameId);
+                        PDOSquadro::addPlayerToPartieSquadro($player->getJoueurNom(), $json, $gameId);
 
-                    // Rediriger vers la partie
-                    header("Location: index.php?partieId=$gameId");
-                    exit;
+                        // Rediriger vers la partie
+                        header("Location: index.php?partieId=$gameId");
+                        exit;
+                    } else {
+                        $_SESSION['erreur'] = "Cette partie est déjà complète.";
+                        header('Location: home.php');
+                        exit;
+                    }
                 }
             }
             break;
