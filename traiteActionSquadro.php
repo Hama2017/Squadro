@@ -1,24 +1,28 @@
 <?php
 /**
- * Gestion des actions du jeu Squadro
+ * Gestionnaire d'actions pour le jeu Squadro
  *
  * Ce script traite les actions des joueurs et met à jour l'état du jeu
- * selon l'automate d'états décrit dans l'énoncé.
  */
 
 // Inclusion de l'autoload
 require_once 'autoload.php';
-require_once 'class/ui/autoload.php';
+require_once 'env/db.php';
 
 // Démarrage de la session
 session_start();
+
+// Vérifier si le joueur est connecté
+if (!isset($_SESSION['player'])) {
+    header('Location: login.php');
+    exit;
+}
 
 /**
  * Initialisation d'une nouvelle partie
  */
 function initialiserPartie(): void {
     $plateau = new PlateauSquadro();
-
     $action = new ActionSquadro($plateau);
 
     // Stockage de l'état du jeu dans la session
@@ -26,6 +30,28 @@ function initialiserPartie(): void {
     $_SESSION['plateau'] = $plateau->toJson();
     $_SESSION['joueurActif'] = PieceSquadro::BLANC; // Le joueur blanc commence
     $_SESSION['etat'] = 'ChoixPiece'; // État initial
+}
+
+/**
+ * Sauvegarde l'état actuel de la partie dans la base de données
+ */
+function sauvegarderEtatPartie(): void {
+    if (isset($_SESSION['partieId']) && $_SESSION['partieId'] > 0) {
+        $partieId = $_SESSION['partieId'];
+        $actionJson = $_SESSION['action'];
+        $gameStatus = 'waitingForPlayer';
+
+        // Si la partie est terminée, mettre à jour le statut
+        if ($_SESSION['etat'] === 'Victoire') {
+            $gameStatus = 'finished';
+        }
+
+        // Initialiser la connexion à la base de données
+        PDOSquadro::initPDO($_ENV['sgbd'], $_ENV['host'], $_ENV['database'], $_ENV['user'], $_ENV['password']);
+
+        // Sauvegarder l'état
+        PDOSquadro::savePartieSquadro($gameStatus, $actionJson, $partieId);
+    }
 }
 
 /**
@@ -56,9 +82,7 @@ function traiterChoisirPiece(array $postData): ?string {
 
     // Vérifier si la pièce est jouable
     if (!$action->estJouablePiece($x, $y)) {
-        $_SESSION['etat'] = 'ChoixPiece';
-        return null;
-       // return "Cette pièce ne peut pas être jouée.";
+        return "Cette pièce ne peut pas être jouée.";
     }
 
     // Mémoriser la position de la pièce sélectionnée
@@ -111,7 +135,10 @@ function traiterConfirmerChoix(): ?string {
 
         // Mettre à jour l'état du jeu dans la session
         $_SESSION['action'] = $action->toJson();
-        $_SESSION['plateau'] = $action->getPlateau()->toJson(); // Utiliser le getter pour obtenir le plateau à jour
+        $_SESSION['plateau'] = $action->getPlateau()->toJson();
+
+        // Sauvegarder l'état dans la base de données
+        sauvegarderEtatPartie();
 
     } catch (Exception $e) {
         return "Erreur lors du déplacement : " . $e->getMessage();
@@ -141,18 +168,28 @@ function traiterAnnulerChoix(): ?string {
  * @return string|null Message d'erreur ou null si tout va bien
  */
 function traiterRejouer(): ?string {
-    // Initialiser une nouvelle partie
-    initialiserPartie();
+    // Rediriger vers la page d'accueil pour créer une nouvelle partie
+    header('Location: home.php');
+    exit;
+
+    return null;
+}
+
+/**
+ * Traitement de l'action RetournerHome
+ *
+ * @return string|null Message d'erreur ou null si tout va bien
+ */
+function traiterRetournerHome(): ?string {
+    // Rediriger vers la page d'accueil
+    header('Location: home.php');
+    exit;
+
     return null;
 }
 
 // Traitement principal
 $erreur = null;
-
-// Si aucune partie n'est en cours, initialiser une nouvelle partie
-if (!isset($_SESSION['etat'])) {
-    initialiserPartie();
-}
 
 // Traitement des différentes actions selon l'état
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -168,6 +205,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['nouvelle_partie'])) {
         // Transition Rejouer (depuis Victoire ou Erreur)
         $erreur = traiterRejouer();
+    } elseif (isset($_POST['retourner_home'])) {
+        // Transition RetournerHome
+        $erreur = traiterRetournerHome();
     } else {
         $erreur = "Action non reconnue ou non permise dans l'état actuel.";
     }
@@ -179,8 +219,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-
-
-// Redirection vers index.php
+// Redirection vers index.php pour afficher l'état actuel
 header('Location: index.php');
 exit;

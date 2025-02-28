@@ -61,6 +61,13 @@ class PlateauSquadro {
         if ($x < 0 || $x >= 7 || $y < 0 || $y >= 7) {
             throw new InvalidArgumentException("Coordonnée ($x, $y) hors limites.");
         }
+
+        // Vérifier si la position existe dans le plateau
+        if (!isset($this->plateau[$x]) || !isset($this->plateau[$x][$y])) {
+            error_log("Position ($x, $y) manquante dans le plateau. Initialisation avec une pièce vide.");
+            $this->plateau[$x][$y] = PieceSquadro::initVide();
+        }
+
         return $this->plateau[$x][$y];
     }
 
@@ -88,7 +95,8 @@ class PlateauSquadro {
         $this->lignesJouables = array_values(array_filter($this->lignesJouables, fn($val) => $val !== $index));
 
         // Log après le retrait
-        error_log("Lignes jouables après retrait : " . implode(", ", $this->lignesJouables));    }
+        error_log("Lignes jouables après retrait : " . implode(", ", $this->lignesJouables));
+    }
 
     public function retireColonneJouable(int $index): void {
         $this->colonnesJouables = array_values(array_filter($this->colonnesJouables, fn($val) => $val !== $index));
@@ -136,28 +144,91 @@ class PlateauSquadro {
     }
 
     public static function fromJson(string $json): PlateauSquadro {
-        $data = json_decode($json, true);
+        // Débogage
+        error_log("JSON reçu dans PlateauSquadro::fromJson: " . substr($json, 0, 100) . "...");
+
+        // Créer un nouveau plateau correctement initialisé
         $plateau = new PlateauSquadro();
-        $plateau->plateau = array_map(
-            fn($row) => array_map(fn($pieceData) => PieceSquadro::fromJson($pieceData), $row),
-            $data['plateau']
-        );
-        $plateau->lignesJouables = $data['lignesJouables'];
-        $plateau->colonnesJouables = $data['colonnesJouables'];
+
+        try {
+            $data = json_decode($json, true);
+
+            // Vérifier si le décodage a réussi
+            if ($data === null) {
+                error_log("Erreur de décodage JSON: " . json_last_error_msg());
+                // Si le décodage a échoué, retourner le nouveau plateau
+                return $plateau;
+            }
+
+            // Vérifier la structure des données
+            if (!isset($data['plateau'])) {
+                error_log("La clé 'plateau' n'existe pas dans les données décodées");
+                return $plateau; // Retourner le plateau déjà initialisé
+            }
+
+            // Si 'plateau' est une chaîne JSON et non un tableau, la décoder
+            if (is_string($data['plateau'])) {
+                $data['plateau'] = json_decode($data['plateau'], true);
+                if ($data['plateau'] === null) {
+                    error_log("Erreur de décodage du plateau: " . json_last_error_msg());
+                    return $plateau; // Retourner le plateau déjà initialisé
+                }
+            }
+
+            // Traiter les données du plateau si elles sont au format attendu
+            if (is_array($data['plateau'])) {
+                // Parcourir les données du plateau et mettre à jour le plateau initialisé
+                for ($i = 0; $i < 7 && isset($data['plateau'][$i]); $i++) {
+                    for ($j = 0; $j < 7 && isset($data['plateau'][$i][$j]); $j++) {
+                        try {
+                            $pieceData = $data['plateau'][$i][$j];
+                            if (is_string($pieceData)) {
+                                $piece = PieceSquadro::fromJson($pieceData);
+                                $plateau->setPiece($piece, $i, $j);
+                            } else if (is_array($pieceData)) {
+                                $piece = PieceSquadro::fromJson(json_encode($pieceData));
+                                $plateau->setPiece($piece, $i, $j);
+                            }
+                        } catch (Exception $e) {
+                            error_log("Erreur lors du traitement de la pièce à ($i,$j): " . $e->getMessage());
+                            // Conserver la pièce par défaut à cette position
+                        }
+                    }
+                }
+            } else {
+                error_log("Le plateau n'est pas un tableau");
+            }
+
+            // Définir les lignes et colonnes jouables avec des valeurs par défaut si nécessaire
+            if (isset($data['lignesJouables']) && is_array($data['lignesJouables'])) {
+                $plateau->lignesJouables = $data['lignesJouables'];
+            }
+
+            if (isset($data['colonnesJouables']) && is_array($data['colonnesJouables'])) {
+                $plateau->colonnesJouables = $data['colonnesJouables'];
+            }
+
+        } catch (Exception $e) {
+            error_log("Exception lors du traitement du plateau: " . $e->getMessage());
+            // En cas d'erreur, conserver le plateau initialisé
+        }
+
         return $plateau;
     }
 
-
     // Correction : ajout de la methode __toString()
-
     public function __toString(): string {
         $result = "";
-        for ($i = 0; $i < count($this->plateau); $i++) {
-            for ($j = 0; $j < count($this->plateau[$i]); $j++) {
-                if (is_array($this->plateau[$i][$j])) {
-                    $result .= "[" . implode(", ", $this->plateau[$i][$j]) . "] ";
+        for ($i = 0; $i < 7; $i++) {
+            for ($j = 0; $j < 7; $j++) {
+                if (isset($this->plateau[$i][$j])) {
+                    if (is_array($this->plateau[$i][$j])) {
+                        $result .= "[" . implode(", ", $this->plateau[$i][$j]) . "] ";
+                    } else {
+                        $result .= $this->plateau[$i][$j] . " ";
+                    }
                 } else {
-                    $result .= $this->plateau[$i][$j] . " ";
+                    $result .= "? ";
                 }
             }
             $result .= "\n";
