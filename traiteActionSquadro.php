@@ -56,7 +56,9 @@ function traiterChoisirPiece(array $postData): ?string {
 
     // Vérifier si la pièce est jouable
     if (!$action->estJouablePiece($x, $y)) {
-        return "Cette pièce ne peut pas être jouée.";
+        $_SESSION['etat'] = 'ChoixPiece';
+        return null;
+       // return "Cette pièce ne peut pas être jouée.";
     }
 
     // Mémoriser la position de la pièce sélectionnée
