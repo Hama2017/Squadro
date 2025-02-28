@@ -111,6 +111,9 @@ function traiterConfirmerChoix(): ?string {
     $action = ActionSquadro::fromJson($_SESSION['action']);
     $joueurActif = $_SESSION['joueurActif'];
 
+    $_SESSION['isPlayerTurn'] = false;
+
+
     try {
         // Effectuer le déplacement avec la méthode jouePiece
         $action->jouePiece($x, $y);
@@ -193,6 +196,9 @@ $erreur = null;
 
 // Traitement des différentes actions selon l'état
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_SESSION['isPlayerTurn']) || !$_SESSION['isPlayerTurn']) {
+        return "Ce n'est pas votre tour de jouer.";
+    }
     if (isset($_POST['piece']) && $_SESSION['etat'] === 'ChoixPiece') {
         // Transition ChoisirPiece
         $erreur = traiterChoisirPiece($_POST);

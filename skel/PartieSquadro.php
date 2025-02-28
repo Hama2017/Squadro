@@ -204,4 +204,20 @@ class PartieSquadro {
     public function __toString(): string {
         return "PartieSquadro { partieId: " . $this->partieId . ", statut: " . $this->gameStatus . " }";
     }
+
+    /**
+     * Détermine quelle couleur de pièce est associée à un joueur
+     *
+     * @param JoueurSquadro $player Le joueur dont on veut connaître la couleur
+     * @return int|null La couleur du joueur (BLANC ou NOIR) ou null si pas trouvé
+     */
+    public function getPlayerColor(JoueurSquadro $player): ?int {
+        if ($this->joueurs[self::PLAYER_ONE]->getId() === $player->getId()) {
+            return PieceSquadro::BLANC; // Premier joueur = pièces blanches
+        } elseif (isset($this->joueurs[self::PLAYER_TWO]) &&
+            $this->joueurs[self::PLAYER_TWO]->getId() === $player->getId()) {
+            return PieceSquadro::NOIR; // Second joueur = pièces noires
+        }
+        return null; // Le joueur ne participe pas à cette partie
+    }
 }

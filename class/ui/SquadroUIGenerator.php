@@ -434,4 +434,30 @@ class SquadroUIGenerator
     {
         $this->plateau = $plateau;
     }
+
+    public function generatePageAttenteTour(): string {
+        $html = $this->generateHeader('Squadro - En attente');
+
+        $joueurNom = ($this->joueurActif === PieceSquadro::BLANC)
+            ? 'Les blancs jouent'
+            : 'Les noirs jouent';
+
+        $html .= '<h2>' . $joueurNom . '</h2>';
+
+        $html .= '<div class="message message-info">
+                <p>C\'est le tour de votre adversaire. Cette page se rafraîchira automatiquement.</p>
+              </div>';
+
+        $html .= $this->generateTableau(false);
+
+        // Ajouter un rafraîchissement automatique toutes les 10 secondes
+        $html .= '<script>
+                setTimeout(function() {
+                    window.location.reload();
+                }, 10000);
+              </script>';
+
+        $html .= $this->generateFooter();
+        return $html;
+    }
 }
