@@ -1,6 +1,8 @@
 <?php
 
 require_once 'skel/PDOSquadro.php';
+require_once 'skel/JoueurSquadro.php';
+
 session_start();
 
 
@@ -27,11 +29,16 @@ if (isset($_REQUEST['playerName'])) {
     require_once 'env/db.php';
     PDOSquadro::initPDO($_ENV['sgbd'],$_ENV['host'],$_ENV['database'],$_ENV['user'],$_ENV['password']);
     $player = PDOSquadro::selectPlayerByName($_REQUEST['playerName']);
-    if (is_null($player))
-        $player = PDOSquadro::createPlayer($_REQUEST['playerName']);
-    $_SESSION['player'] = $player;
-    header('HTTP/1.1 303 See Other');
-    header('Location: index.php');
+
+    if (isset($_REQUEST['playerName'])) {
+        if (is_null($player))
+            $player = PDOSquadro::createPlayer($_REQUEST['playerName']);
+        $_SESSION['player'] = $player;
+        header('Location: home.php');
+        exit;
+    }
+
+
 }
 else {
   echo getPageLogin();
