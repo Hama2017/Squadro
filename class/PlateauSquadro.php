@@ -80,8 +80,15 @@ class PlateauSquadro {
     }
 
     public function retireLigneJouable(int $index): void {
+        // Log avant le retrait
+        error_log("Tentative de retrait de la ligne jouable : $index");
+        error_log("Lignes jouables avant retrait : " . implode(", ", $this->lignesJouables));
+
+        // Filtrer et réindexer le tableau
         $this->lignesJouables = array_values(array_filter($this->lignesJouables, fn($val) => $val !== $index));
-    }
+
+        // Log après le retrait
+        error_log("Lignes jouables après retrait : " . implode(", ", $this->lignesJouables));    }
 
     public function retireColonneJouable(int $index): void {
         $this->colonnesJouables = array_values(array_filter($this->colonnesJouables, fn($val) => $val !== $index));

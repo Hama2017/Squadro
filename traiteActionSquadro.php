@@ -2,8 +2,8 @@
 /**
  * Gestion des actions du jeu Squadro
  *
- * Ce script traite les actions des joueurs et met à jour l'état du jeu.
- * Il implémente l'automate décrit dans l'énoncé pour la gestion des transitions.
+ * Ce script traite les actions des joueurs et met à jour l'état du jeu
+ * selon l'automate d'états décrit dans l'énoncé.
  */
 
 // Inclusion de l'autoload
@@ -29,68 +29,6 @@ function initialiserPartie(): void {
 }
 
 /**
- * Effectue le déplacement manuel d'une pièce
- * Cette fonction est utilisée comme solution de secours si jouePiece() ne fonctionne pas
- *
- * @param PlateauSquadro $plateau Le plateau de jeu
- * @param int $x Coordonnée X de départ
- * @param int $y Coordonnée Y de départ
- * @param int $destX Coordonnée X de destination
- * @param int $destY Coordonnée Y de destination
- */
-function deplacerPieceManuel(PlateauSquadro $plateau, int $x, int $y, int $destX, int $destY): void {
-    // Récupérer la pièce à déplacer
-    $piece = $plateau->getPiece($x, $y);
-    $couleur = $piece->getCouleur();
-    $direction = $piece->getDirection();
-
-    // Vider la case d'origine
-    $plateau->setPiece(PieceSquadro::initVide(), $x, $y);
-
-    // Créer une nouvelle pièce avec les mêmes propriétés
-    $nouvellePiece = null;
-    if ($couleur === PieceSquadro::BLANC) {
-        $nouvellePiece = ($direction === PieceSquadro::EST) ?
-            PieceSquadro::initBlancEst() : PieceSquadro::initBlancOuest();
-    } else {
-        $nouvellePiece = ($direction === PieceSquadro::NORD) ?
-            PieceSquadro::initNoirNord() : PieceSquadro::initNoirSud();
-    }
-
-    // Placer la pièce à la destination
-    $plateau->setPiece($nouvellePiece, $destX, $destY);
-
-    // Vérifier si c'est une case de retournement
-    if (($destX === 0 || $destX === 6 || $destY === 0 || $destY === 6) &&
-        $plateau->getPiece($destX, $destY)->getCouleur() !== PieceSquadro::NEUTRE) {
-
-        // Inverser la direction de la pièce
-        $nouvelleDirection = null;
-        if ($direction === PieceSquadro::EST) {
-            $nouvelleDirection = PieceSquadro::OUEST;
-        } else if ($direction === PieceSquadro::OUEST) {
-            $nouvelleDirection = PieceSquadro::EST;
-        } else if ($direction === PieceSquadro::NORD) {
-            $nouvelleDirection = PieceSquadro::SUD;
-        } else {
-            $nouvelleDirection = PieceSquadro::NORD;
-        }
-
-        // Créer une nouvelle pièce avec la direction inversée
-        if ($couleur === PieceSquadro::BLANC) {
-            $pieceRetournee = ($nouvelleDirection === PieceSquadro::EST) ?
-                PieceSquadro::initBlancEst() : PieceSquadro::initBlancOuest();
-        } else {
-            $pieceRetournee = ($nouvelleDirection === PieceSquadro::NORD) ?
-                PieceSquadro::initNoirNord() : PieceSquadro::initNoirSud();
-        }
-
-        // Remplacer la pièce sur le plateau
-        $plateau->setPiece($pieceRetournee, $destX, $destY);
-    }
-}
-
-/**
  * Traitement de l'action ChoisirPiece
  *
  * @param array $postData Données du formulaire
@@ -106,6 +44,7 @@ function traiterChoisirPiece(array $postData): ?string {
     $x = (int)$x;
     $y = (int)$y;
 
+    // Récupérer l'état du jeu
     $action = ActionSquadro::fromJson($_SESSION['action']);
     $plateau = PlateauSquadro::fromJson($_SESSION['plateau']);
 
@@ -115,24 +54,9 @@ function traiterChoisirPiece(array $postData): ?string {
         return "Cette pièce n'appartient pas au joueur actif.";
     }
 
-    // Calculer la destination pour vérification
-    try {
-        $destCoords = $plateau->getCoordDestination($x, $y);
-        $destX = $destCoords[0];
-        $destY = $destCoords[1];
-
-        // Vérifier si la destination est valide
-        if ($destX < 0 || $destX >= 7 || $destY < 0 || $destY >= 7) {
-            return "Destination invalide : hors plateau.";
-        }
-
-        // Vérifier si la destination est libre
-        $pieceDestination = $plateau->getPiece($destX, $destY);
-        if ($pieceDestination->getCouleur() !== PieceSquadro::VIDE) {
-            return "Destination invalide : case occupée.";
-        }
-    } catch (Exception $e) {
-        return "Erreur lors du calcul de la destination : " . $e->getMessage();
+    // Vérifier si la pièce est jouable
+    if (!$action->estJouablePiece($x, $y)) {
+        return "Cette pièce ne peut pas être jouée.";
     }
 
     // Mémoriser la position de la pièce sélectionnée
@@ -157,41 +81,13 @@ function traiterConfirmerChoix(): ?string {
     $x = $_SESSION['pieceSelectionnee']['x'];
     $y = $_SESSION['pieceSelectionnee']['y'];
 
+    // Récupérer l'état du jeu
     $action = ActionSquadro::fromJson($_SESSION['action']);
-    $plateau = PlateauSquadro::fromJson($_SESSION['plateau']);
     $joueurActif = $_SESSION['joueurActif'];
 
     try {
-        // Récupérer les informations avant déplacement
-        $piece = $plateau->getPiece($x, $y);
-        $destCoords = $plateau->getCoordDestination($x, $y);
-        $destX = $destCoords[0];
-        $destY = $destCoords[1];
-
-        // Essayer de jouer la pièce avec la méthode ActionSquadro
-        try {
-            $action->jouePiece($x, $y);
-
-            // Vérifier si le déplacement a été effectué
-            $caseOrigineEstVide = ($plateau->getPiece($x, $y)->getCouleur() === PieceSquadro::VIDE);
-            $caseDestinationOccupee = ($plateau->getPiece($destX, $destY)->getCouleur() === $piece->getCouleur());
-
-            // Si le déplacement n'a pas été effectué, le faire manuellement
-            if (!$caseOrigineEstVide || !$caseDestinationOccupee) {
-                error_log("Déplacement manuel nécessaire");
-                deplacerPieceManuel($plateau, $x, $y, $destX, $destY);
-
-                // Recréer l'action avec le plateau mis à jour
-                $action = new ActionSquadro($plateau);
-            }
-        } catch (Exception $e) {
-            // Si jouePiece échoue, utiliser le déplacement manuel
-            error_log("jouePiece a échoué: " . $e->getMessage());
-            deplacerPieceManuel($plateau, $x, $y, $destX, $destY);
-
-            // Recréer l'action avec le plateau mis à jour
-            $action = new ActionSquadro($plateau);
-        }
+        // Effectuer le déplacement avec la méthode jouePiece
+        $action->jouePiece($x, $y);
 
         // Oublier les anciennes coordonnées
         unset($_SESSION['pieceSelectionnee']);
@@ -213,12 +109,7 @@ function traiterConfirmerChoix(): ?string {
 
         // Mettre à jour l'état du jeu dans la session
         $_SESSION['action'] = $action->toJson();
-        $_SESSION['plateau'] = $plateau->toJson();
-
-        // Debug - État après traitement
-        error_log("État après traitement: Case origine ($x,$y) = " .
-            $plateau->getPiece($x, $y)->getCouleur() . ", Case dest ($destX,$destY) = " .
-            $plateau->getPiece($destX, $destY)->getCouleur());
+        $_SESSION['plateau'] = $action->getPlateau()->toJson(); // Utiliser le getter pour obtenir le plateau à jour
 
     } catch (Exception $e) {
         return "Erreur lors du déplacement : " . $e->getMessage();
@@ -285,6 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['etat'] = 'Erreur';
     }
 }
+
+
 
 // Redirection vers index.php
 header('Location: index.php');
